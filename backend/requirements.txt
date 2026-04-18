@@ -1,0 +1,26 @@
+# FastAPI + Server
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+
+# PDF Parsing
+PyMuPDF
+
+# NLP
+spacy
+nltk
+
+# Sentence Embeddings
+sentence-transformers
+
+# Clustering
+scikit-learn
+
+# HTTP Requests (arXiv / Semantic Scholar)
+requests
+httpx
+
+# Data
+numpy
+pydantic

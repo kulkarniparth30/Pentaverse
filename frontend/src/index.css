@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ──────────────────────────────── */
+:root {
+  --forensiq-bg: #0a0e1a;
+  --forensiq-surface: #111827;
+  --forensiq-surface-2: #1e293b;
+  --forensiq-border: #1e3a5f;
+  --forensiq-text: #e2e8f0;
+  --forensiq-text-muted: #94a3b8;
+  --forensiq-accent: #6366f1;
+  --forensiq-accent-glow: rgba(99, 102, 241, 0.3);
+  --forensiq-success: #10b981;
+  --forensiq-warning: #f59e0b;
+  --forensiq-danger: #ef4444;
+  --forensiq-cluster-0: #3b82f6;
+  --forensiq-cluster-1: #f97316;
+  --forensiq-cluster-2: #ef4444;
+  --forensiq-cluster-3: #a855f7;
+}
+
+/* ─── Base ───────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--forensiq-bg);
+  color: var(--forensiq-text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--forensiq-bg); }
+::-webkit-scrollbar-thumb { background: var(--forensiq-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--forensiq-accent); }
+
+/* ─── Glass Card ─────────────────────────────────── */
+.glass-card {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--forensiq-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+.glass-card:hover {
+  border-color: var(--forensiq-accent);
+  box-shadow: 0 0 30px var(--forensiq-accent-glow);
+}
+
+/* ─── Animations ─────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--forensiq-accent-glow); }
+  50% { box-shadow: 0 0 40px var(--forensiq-accent-glow); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out both;
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
