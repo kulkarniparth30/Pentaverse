@@ -1,17 +1,25 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './components/auth/AuthContext.jsx'
+import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
 import UploadPage from './pages/UploadPage.jsx'
 import AnalysisPage from './pages/AnalysisPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
+import SignupPage from './pages/SignupPage.jsx'
 
 function Navbar() {
   const location = useLocation()
+  const { user, signOut } = useAuth()
+  
   const navItems = [
     { path: '/', label: 'Upload', icon: '📄' },
     { path: '/analysis', label: 'Analysis', icon: '🔬' },
     { path: '/report', label: 'Report', icon: '📊' },
   ]
+
+  if (!user) return null
 
   return (
     <nav className="navbar-pill">
@@ -47,9 +55,12 @@ function Navbar() {
         >
           <span style={{ marginRight: 4 }}>🕒</span>History
         </Link>
-        <Link to="/" className="nav-cta">
-          Get Started <span style={{ fontSize: 14 }}>→</span>
-        </Link>
+        <button 
+          onClick={signOut}
+          className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-red-500 transition-colors"
+        >
+          Sign Out
+        </button>
       </div>
     </nav>
   )
@@ -66,18 +77,43 @@ function BackgroundDecoration() {
 
 export default function App() {
   return (
-    <Router>
-      <BackgroundDecoration />
-      <Navbar />
-      <main style={{ paddingTop: 90, position: 'relative', zIndex: 1 }}>
-        <Routes>
-          <Route path="/" element={<UploadPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/analysis" element={<AnalysisPage />} />
-          <Route path="/report" element={<ReportPage />} />
-          <Route path="/report/:fileId" element={<ReportPage />} />
-        </Routes>
-      </main>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <BackgroundDecoration />
+        <Navbar />
+        <main style={{ paddingTop: 90, position: 'relative', zIndex: 1 }}>
+          <Routes>
+            <Route path="/" element={
+              <ProtectedRoute>
+                <UploadPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            
+            <Route path="/history" element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/analysis" element={
+              <ProtectedRoute>
+                <AnalysisPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/report" element={
+              <ProtectedRoute>
+                <ReportPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/report/:fileId" element={
+              <ProtectedRoute>
+                <ReportPage />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </main>
+      </Router>
+    </AuthProvider>
   )
 }

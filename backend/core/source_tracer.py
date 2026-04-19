@@ -106,9 +106,9 @@ def _search_semantic_scholar(query: str, max_results: int = 10) -> list:
         return []
 
 
-def _extract_query_keywords(text: str, n: int = 5) -> str:
-    words = re.findall(r'[a-zA-Z]{4,}', text.lower())
-    stopwords = {"this","that","with","from","have","been","their","which","would","about","into","more","than","also","each","other","were","they","some","these","could","when","what","will","does","only"}
+def _extract_query_keywords(text: str, n: int = 7) -> str:
+    words = re.findall(r'[a-zA-Z]{5,}', text.lower())
+    stopwords = {"which","would","about","their","these","could","where","there","other"}
     filtered = [w for w in words if w not in stopwords]
     from collections import Counter
     common = Counter(filtered).most_common(n)

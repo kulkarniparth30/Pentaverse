@@ -143,6 +143,11 @@ def analyze_paper(file_id: str):
 
         # Store report in Supabase
         filename = os.path.basename(file_path)
+        name_path = f"{file_path}.name"
+        if os.path.exists(name_path):
+            with open(name_path, "r", encoding="utf-8") as f:
+                filename = f.read().strip()
+                
         try:
             from core.db import get_db
             supabase = get_db()

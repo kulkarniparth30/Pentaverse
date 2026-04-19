@@ -99,7 +99,7 @@ def cluster_paragraphs(style_vectors: list, paragraphs: list = None) -> dict:
 
     # ── Step 8: Only report multi-author if silhouette confirms it ──
     # Low silhouette = clusters are weak = likely single author
-    CONFIDENCE_THRESHOLD = 0.25
+    CONFIDENCE_THRESHOLD = 0.05
     if best_score < CONFIDENCE_THRESHOLD:
         # Clusters are not meaningful — treat as single author
         labels = [0] * n

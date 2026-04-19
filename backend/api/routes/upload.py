@@ -88,6 +88,10 @@ async def upload_document(file: UploadFile = File(...)):
     with open(file_path, "wb") as f:
         f.write(content)
 
+    # Save original filename for history
+    with open(f"{file_path}.name", "w", encoding="utf-8") as f:
+        f.write(file.filename or "unknown")
+
     return UploadResponse(
         file_id=file_id,
         filename=file.filename,
@@ -133,6 +137,9 @@ async def upload_text(payload: dict):
     file_path = os.path.join(UPLOAD_DIR, f"{file_id}.txt")
     with open(file_path, "wb") as f:
         f.write(content)
+
+    with open(f"{file_path}.name", "w", encoding="utf-8") as f:
+        f.write("pasted-text.txt")
 
     return UploadResponse(
         file_id=file_id,
