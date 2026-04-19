@@ -22,7 +22,7 @@ export default function CitationGraph({ anomalies = {} }) {
 
   return (
     <div className="glass-card">
-      <h3 className="text-sm font-semibold mb-4">Citation Health</h3>
+      <h3 className="text-sm font-semibold mb-4" style={{ color: '#1e293b' }}>Citation Health</h3>
       <div className="flex flex-col gap-3">
         {CHECKS.map(check => {
           const hasAnomaly = anomalies[check.key]
@@ -31,16 +31,16 @@ export default function CitationGraph({ anomalies = {} }) {
               <div style={{
                 width: 28, height: 28, borderRadius: 8, display: 'flex',
                 alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0,
-                background: hasAnomaly ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
-                border: `1px solid ${hasAnomaly ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`,
+                background: hasAnomaly ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
+                border: `1px solid ${hasAnomaly ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}`,
               }}>
                 {hasAnomaly ? '⚠️' : '✓'}
               </div>
               <div>
-                <p className="text-xs font-medium" style={{ color: hasAnomaly ? 'var(--forensiq-danger)' : 'var(--forensiq-success)' }}>
+                <p className="text-xs font-medium" style={{ color: hasAnomaly ? '#ef4444' : '#10b981' }}>
                   {check.label}
                 </p>
-                <p className="text-xs" style={{ color: 'var(--forensiq-text-muted)' }}>{check.desc}</p>
+                <p className="text-xs" style={{ color: '#94a3b8' }}>{check.desc}</p>
               </div>
             </div>
           )
@@ -50,13 +50,13 @@ export default function CitationGraph({ anomalies = {} }) {
       {/* Anomaly Score Bar */}
       <div className="mt-4">
         <div className="flex justify-between text-xs mb-1">
-          <span style={{ color: 'var(--forensiq-text-muted)' }}>Anomaly Score</span>
-          <span className="font-mono">{(score * 100).toFixed(0)}%</span>
+          <span style={{ color: '#94a3b8' }}>Anomaly Score</span>
+          <span className="font-mono" style={{ color: '#1e293b' }}>{(score * 100).toFixed(0)}%</span>
         </div>
-        <div style={{ height: 4, borderRadius: 2, background: 'var(--forensiq-surface-2)' }}>
+        <div style={{ height: 6, borderRadius: 99, background: '#f1f5f9' }}>
           <div style={{
-            height: '100%', borderRadius: 2,
-            background: score > 0.5 ? 'var(--forensiq-danger)' : score > 0.2 ? 'var(--forensiq-warning)' : 'var(--forensiq-success)',
+            height: '100%', borderRadius: 99,
+            background: score > 0.5 ? '#ef4444' : score > 0.2 ? '#f59e0b' : '#10b981',
             width: `${score * 100}%`, transition: 'width 0.6s ease',
           }} />
         </div>

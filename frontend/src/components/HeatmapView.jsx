@@ -42,8 +42,8 @@ export default function HeatmapView({ paragraphs = [] }) {
       .attr('height', cellSize)
       .attr('rx', 8)
       .attr('fill', d => CLUSTER_COLORS[d.cluster % CLUSTER_COLORS.length])
-      .attr('opacity', d => d.flagged ? 1 : 0.6)
-      .attr('stroke', d => d.flagged ? '#fff' : 'transparent')
+      .attr('opacity', d => d.flagged ? 1 : 0.7)
+      .attr('stroke', d => d.flagged ? '#1e293b' : 'transparent')
       .attr('stroke-width', d => d.flagged ? 2 : 0)
       .style('cursor', 'pointer')
       .style('transition', 'all 0.2s ease')
@@ -53,7 +53,7 @@ export default function HeatmapView({ paragraphs = [] }) {
         setTooltip({ x: rect.left, y: rect.top - 10, data: d })
       })
       .on('mouseleave', (event, d) => {
-        d3.select(event.currentTarget).attr('opacity', d.flagged ? 1 : 0.6).attr('transform', '')
+        d3.select(event.currentTarget).attr('opacity', d.flagged ? 1 : 0.7).attr('transform', '')
         setTooltip(null)
       })
 
@@ -81,7 +81,7 @@ export default function HeatmapView({ paragraphs = [] }) {
         {[...new Set(paragraphs.map(p => p.cluster))].sort().map(cid => (
           <div key={cid} className="flex items-center gap-2 text-xs">
             <div style={{ width: 12, height: 12, borderRadius: 3, background: CLUSTER_COLORS[cid % CLUSTER_COLORS.length] }} />
-            <span style={{ color: 'var(--forensiq-text-muted)' }}>Style {String.fromCharCode(65 + cid)}</span>
+            <span style={{ color: '#94a3b8' }}>Style {String.fromCharCode(65 + cid)}</span>
           </div>
         ))}
       </div>
@@ -90,15 +90,20 @@ export default function HeatmapView({ paragraphs = [] }) {
       {tooltip && (
         <div style={{
           position: 'fixed', left: tooltip.x, top: tooltip.y - 120,
-          background: 'rgba(17,24,39,0.95)', border: '1px solid var(--forensiq-border)',
-          borderRadius: 12, padding: 16, maxWidth: 300, zIndex: 100,
-          backdropFilter: 'blur(8px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          background: '#fff', border: '1px solid #e2e8f0',
+          borderRadius: 14, padding: 16, maxWidth: 300, zIndex: 100,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.12)',
         }}>
           <p className="text-xs font-bold mb-1" style={{ color: CLUSTER_COLORS[tooltip.data.cluster % CLUSTER_COLORS.length] }}>
             Paragraph {tooltip.data.id + 1} — Cluster {String.fromCharCode(65 + tooltip.data.cluster)}
             {tooltip.data.flagged && <span className="ml-2">🚩 Flagged</span>}
           </p>
-          <p className="text-xs" style={{ color: 'var(--forensiq-text-muted)' }}>
+          {tooltip.data.ai_probability > 0.5 && (
+            <p className="text-xs mb-1 font-bold" style={{ color: '#ef4444' }}>
+              🤖 AI Generated: {Math.round(tooltip.data.ai_probability * 100)}%
+            </p>
+          )}
+          <p className="text-xs" style={{ color: '#94a3b8' }}>
             {tooltip.data.text_preview?.slice(0, 120)}...
           </p>
         </div>

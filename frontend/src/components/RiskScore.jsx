@@ -46,7 +46,7 @@ export default function RiskScore({ score = 0 }) {
     // Background arc
     ctx.beginPath()
     ctx.arc(cx, cy, radius, startAngle, endAngle)
-    ctx.strokeStyle = 'rgba(30,58,95,0.4)'
+    ctx.strokeStyle = '#f1f5f9'
     ctx.lineWidth = lineWidth
     ctx.lineCap = 'round'
     ctx.stroke()
@@ -58,12 +58,12 @@ export default function RiskScore({ score = 0 }) {
     ctx.lineWidth = lineWidth
     ctx.lineCap = 'round'
     ctx.shadowColor = color
-    ctx.shadowBlur = 15
+    ctx.shadowBlur = 10
     ctx.stroke()
     ctx.shadowBlur = 0
 
     // Score text
-    ctx.fillStyle = '#e2e8f0'
+    ctx.fillStyle = '#1e293b'
     ctx.font = 'bold 28px Inter, sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText(Math.round(score), cx, cy + 5)
@@ -79,7 +79,7 @@ export default function RiskScore({ score = 0 }) {
       <p className="text-sm font-semibold mt-2" style={{ color: getColor(score) }}>
         {getLabel(score)}
       </p>
-      <p className="text-xs" style={{ color: 'var(--forensiq-text-muted)' }}>Overall Risk Score</p>
+      <p className="text-xs" style={{ color: '#94a3b8' }}>Overall Risk Score</p>
     </div>
   )
 }

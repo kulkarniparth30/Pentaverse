@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from api.routes import upload, analyze, report
+from api.routes import upload, analyze, report, history
 
 # Load environment variables
 load_dotenv()
@@ -42,6 +42,7 @@ app.add_middleware(
 app.include_router(upload.router, tags=["Upload"])
 app.include_router(analyze.router, tags=["Analysis"])
 app.include_router(report.router, tags=["Report"])
+app.include_router(history.router, tags=["History"])
 
 # Ensure uploads directory exists
 os.makedirs("uploads", exist_ok=True)

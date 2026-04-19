@@ -27,13 +27,24 @@ async def get_report(file_id: str):
     Returns:
         ForensicReport JSON with all analysis results.
     """
-    # Import the shared store from analyze route
+    # Try Supabase first
+    from core.db import get_db
+    supabase = get_db()
+    
+    if supabase:
+        try:
+            response = supabase.table("analysis_history").select("report").eq("file_id", file_id).execute()
+            if response.data and len(response.data) > 0:
+                return response.data[0]["report"]
+        except Exception as e:
+            print(f"[Report] Error fetching from Supabase: {e}")
+
+    # Fallback to in-memory store
     from api.routes.analyze import reports_store
+    if file_id in reports_store:
+        return reports_store[file_id]
 
-    if file_id not in reports_store:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Report for file '{file_id}' not found. Run POST /analyze/{file_id} first."
-        )
-
-    return reports_store[file_id]
+    raise HTTPException(
+        status_code=404,
+        detail=f"Report for file '{file_id}' not found. Run POST /analyze/{file_id} first."
+    )

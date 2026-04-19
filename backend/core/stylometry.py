@@ -21,9 +21,15 @@ Dependencies: spaCy (en_core_web_sm), NLTK
 
 import re
 import string
+import os
+
+# Prevent PyTorch deadlock on Windows during concurrent encoding
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import spacy
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
+from sentence_transformers import SentenceTransformer
 
 # Ensure NLTK data is available
 try:
@@ -34,16 +40,25 @@ except LookupError:
 # Load spaCy model (load once, reuse)
 nlp = spacy.load("en_core_web_sm")
 
+_embedder = None
+def _get_embedder():
+    global _embedder
+    if _embedder is None:
+        print("Loading Deep Stylometry Model (all-MiniLM-L6-v2)...")
+        _embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    return _embedder
+
 
 def extract_style_features(paragraph: str) -> list:
     """
-    Extract a 7-dimensional stylometric feature vector from a paragraph.
+    Extract a 391-dimensional stylometric feature vector from a paragraph.
+    (7 handcrafted features + 384 dense semantic/stylistic features)
 
     Args:
         paragraph: Text string (should be >= 50 words for meaningful features).
 
     Returns:
-        List of 7 float values representing the style vector.
+        List of 391 float values representing the style vector.
     """
     sentences = sent_tokenize(paragraph)
     words = word_tokenize(paragraph)
@@ -52,7 +67,7 @@ def extract_style_features(paragraph: str) -> list:
     alpha_words = [w for w in words if w.isalpha()]
 
     if not alpha_words or not sentences:
-        return [0.0] * 7
+        return [0.0] * 391
 
     # Parse with spaCy for POS and dependency features
     doc = nlp(paragraph)
@@ -80,7 +95,7 @@ def extract_style_features(paragraph: str) -> list:
     # Feature 6: Sentence complexity (avg dependency tree depth)
     sentence_complexity = _compute_tree_depth(doc)
 
-    return [
+    basic_features = [
         round(avg_sentence_length, 4),
         round(type_token_ratio, 4),
         round(avg_word_length, 4),
@@ -89,6 +104,14 @@ def extract_style_features(paragraph: str) -> list:
         round(noun_verb_ratio, 4),
         round(sentence_complexity, 4),
     ]
+
+    try:
+        embedder = _get_embedder()
+        dense_vector = embedder.encode(paragraph).tolist()
+        return basic_features + dense_vector
+    except Exception as e:
+        print(f"Error in deep stylometry: {e}")
+        return basic_features + [0.0] * 384
 
 
 def _compute_passive_ratio(doc) -> float:

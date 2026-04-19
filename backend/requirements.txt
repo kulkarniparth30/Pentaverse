@@ -1,11 +1,15 @@
 # FastAPI + Server
 fastapi
 uvicorn[standard]
+supabase
 python-multipart
 python-dotenv
 
 # PDF Parsing
 PyMuPDF
+
+# DOCX Parsing
+python-docx
 
 # NLP
 spacy

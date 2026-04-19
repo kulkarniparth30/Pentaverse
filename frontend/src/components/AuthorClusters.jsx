@@ -17,7 +17,7 @@ const CLUSTER_NAMES = ['Style A', 'Style B', 'Style C', 'Style D', 'Style E']
 
 export default function AuthorClusters({ clusters = [], paragraphs = [] }) {
   if (!clusters.length) {
-    return <div className="glass-card text-center" style={{ color: 'var(--forensiq-text-muted)' }}>No cluster data.</div>
+    return <div className="glass-card text-center" style={{ color: '#94a3b8' }}>No cluster data.</div>
   }
 
   return (
@@ -31,15 +31,15 @@ export default function AuthorClusters({ clusters = [], paragraphs = [] }) {
           <div key={cluster.cluster_id} className="glass-card" style={{ borderLeft: `4px solid ${color}` }}>
             <div className="flex items-center gap-3 mb-4">
               <div style={{
-                width: 32, height: 32, borderRadius: 8, background: `${color}20`,
+                width: 32, height: 32, borderRadius: 8, background: `${color}10`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, fontWeight: 700, color,
               }}>
                 {String.fromCharCode(65 + cluster.cluster_id)}
               </div>
               <div>
-                <p className="font-semibold text-sm">{name}</p>
-                <p className="text-xs" style={{ color: 'var(--forensiq-text-muted)' }}>
+                <p className="font-semibold text-sm" style={{ color: '#1e293b' }}>{name}</p>
+                <p className="text-xs" style={{ color: '#94a3b8' }}>
                   {cluster.paragraph_count} paragraphs
                 </p>
               </div>
@@ -56,10 +56,10 @@ export default function AuthorClusters({ clusters = [], paragraphs = [] }) {
               ].map((m, i) => (
                 <div key={i}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span style={{ color: 'var(--forensiq-text-muted)' }}>{m.label}</span>
-                    <span className="font-mono">{typeof m.value === 'number' ? m.value.toFixed(2) : '—'}</span>
+                    <span style={{ color: '#94a3b8' }}>{m.label}</span>
+                    <span className="font-mono" style={{ color: '#1e293b' }}>{typeof m.value === 'number' ? m.value.toFixed(2) : '—'}</span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: 'var(--forensiq-surface-2)' }}>
+                  <div style={{ height: 4, borderRadius: 2, background: '#f1f5f9' }}>
                     <div style={{
                       height: '100%', borderRadius: 2, background: color,
                       width: `${Math.min((m.value / m.max) * 100, 100)}%`,

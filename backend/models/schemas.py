@@ -41,9 +41,11 @@ class ParagraphResult(BaseModel):
     """Analysis result for a single paragraph."""
     id: int = Field(..., description="Paragraph index (0-based)")
     text_preview: str = Field(..., description="First 200 chars of paragraph text")
+    full_text: str = Field(default="", description="Full text of the paragraph")
     cluster: int = Field(..., description="Assigned cluster ID (style group)")
     style_stats: StyleStats = Field(..., description="Stylometric features")
     flagged: bool = Field(default=False, description="True if paragraph is suspicious")
+    ai_probability: float = Field(default=0.0, description="Probability of being AI-generated (0-1)")
 
 
 # ─── Citation Anomalies ─────────────────────────────────
@@ -53,6 +55,7 @@ class CitationAnomalies(BaseModel):
     temporal_anomaly: bool = Field(default=False, description="Uneven year distribution detected")
     topic_mismatch: bool = Field(default=False, description="Cross-section topic inconsistency")
     self_citation_anomaly: bool = Field(default=False, description="Unusual self-citation pattern")
+    hallucinated_citations: List[str] = Field(default_factory=list, description="Citations verified as fake via Crossref")
     score: float = Field(default=0.0, description="Citation anomaly score (0-1)")
     details: Optional[str] = Field(default=None, description="Human-readable explanation")
 
@@ -87,11 +90,18 @@ class ForensicReport(BaseModel):
     Frontend team: build your UI components based on this schema.
     """
     overall_risk_score: float = Field(..., description="Risk score 0-100")
+    overall_ai_probability: float = Field(default=0.0, description="Overall probability of document being AI generated (0-1)")
     estimated_authors: int = Field(..., description="Estimated number of distinct authors")
     paragraphs: List[ParagraphResult] = Field(default_factory=list)
     clusters: List[ClusterInfo] = Field(default_factory=list)
     citation_anomalies: CitationAnomalies = Field(default_factory=CitationAnomalies)
     source_matches: List[SourceMatch] = Field(default_factory=list)
+
+    # ── LLM Summaries ──
+    forensic_summary: Optional[str] = Field(default=None, description="General forensic overview")
+    ai_detection_summary: Optional[str] = Field(default=None, description="Detailed AI analysis text")
+    stylometry_inconsistencies_summary: Optional[str] = Field(default=None, description="Explanation of style shifts")
+    likely_ai_tool: Optional[str] = Field(default="Unknown", description="Predicted AI tool (e.g. ChatGPT, Claude)")
 
 
 # ─── Analysis Response ──────────────────────────────────

@@ -1,9 +1,10 @@
 """
-PDF Parser
-==========
-Extracts text and citations from academic PDF files using PyMuPDF.
+Document Parser
+===============
+Extracts text and citations from academic documents.
+Supports: PDF (PyMuPDF), DOCX (python-docx), TXT (plain text).
 
-Input:  Path to a PDF file
+Input:  Path to a document file
 Output: {
     "text": str,          # Full document text (body only)
     "citations": [str],   # List of citation strings from References section
@@ -11,40 +12,135 @@ Output: {
 }
 
 Owner: Backend Dev 1
-Dependencies: PyMuPDF (fitz)
+Dependencies: PyMuPDF (fitz), python-docx
 """
 
+import os
 import re
 import fitz  # PyMuPDF
 
+try:
+    from docx import Document as DocxDocument  # python-docx
+except ImportError:
+    DocxDocument = None  # type: ignore
 
-def parse_pdf(file_path: str) -> dict:
+
+def parse_document(file_path: str) -> dict:
     """
-    Parse a PDF file and extract body text + citations.
+    Parse any supported document format and extract body text + citations.
+
+    Auto-detects format by file extension. Delegates to appropriate parser.
 
     Args:
-        file_path: Absolute path to the PDF file.
+        file_path: Absolute path to the document file.
 
     Returns:
         Dictionary with keys: text, citations, page_count
     """
+    ext = os.path.splitext(file_path)[1].lower()
+
+    if ext == ".pdf":
+        return _parse_pdf(file_path)
+    elif ext in (".docx", ".doc"):
+        return _parse_docx(file_path)
+    elif ext == ".txt":
+        return _parse_txt(file_path)
+    else:
+        raise ValueError(f"Unsupported file format: {ext}")
+
+
+# ── PDF Parser ───────────────────────────────────────────────────────────────
+
+def _parse_pdf(file_path: str) -> dict:
+    """Parse PDF using PyMuPDF."""
     doc = fitz.open(file_path)
 
     full_text = ""
     for page in doc:
-        full_text += page.get_text("text") + "\n"
+        blocks = page.get_text("blocks")
+        for b in blocks:
+            if b[6] == 0:  # text block (not image)
+                block_text = b[4]
+                clean_block = re.sub(r'\s+', ' ', block_text).strip()
+                if len(clean_block) > 3:
+                    full_text += clean_block + "\n\n"
 
+    page_count = len(doc)
     doc.close()
 
-    # Split body text from references section
     body_text, citations = _split_references(full_text)
 
     return {
         "text": body_text.strip(),
         "citations": citations,
-        "page_count": len(doc),
+        "page_count": page_count,
     }
 
+
+# ── DOCX Parser ──────────────────────────────────────────────────────────────
+
+def _parse_docx(file_path: str) -> dict:
+    """Parse DOCX/DOC using python-docx."""
+    if DocxDocument is None:
+        raise ImportError(
+            "python-docx is required for DOCX support. "
+            "Install it: pip install python-docx"
+        )
+
+    doc = DocxDocument(file_path)
+
+    full_text = ""
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            full_text += text + "\n\n"
+
+    # Estimate page count (rough: ~3000 chars per page)
+    char_count = len(full_text)
+    page_count = max(1, char_count // 3000)
+
+    body_text, citations = _split_references(full_text)
+
+    return {
+        "text": body_text.strip(),
+        "citations": citations,
+        "page_count": page_count,
+    }
+
+
+# ── TXT Parser ───────────────────────────────────────────────────────────────
+
+def _parse_txt(file_path: str) -> dict:
+    """Parse plain text file."""
+    encodings = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
+
+    full_text = None
+    for enc in encodings:
+        try:
+            with open(file_path, "r", encoding=enc) as f:
+                full_text = f.read()
+            break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+
+    if full_text is None:
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            full_text = f.read()
+
+    # Estimate page count
+    char_count = len(full_text)
+    page_count = max(1, char_count // 3000)
+
+    body_text, citations = _split_references(full_text)
+
+    return {
+        "text": body_text.strip(),
+        "citations": citations,
+        "page_count": page_count,
+    }
+
+
+# ── Shared: Reference Splitting ──────────────────────────────────────────────
 
 def _split_references(text: str) -> tuple:
     """
@@ -55,13 +151,8 @@ def _split_references(text: str) -> tuple:
     Returns:
         (body_text, list_of_citation_strings)
     """
-    # Common patterns for reference section headers
     ref_patterns = [
-        r'\n\s*References\s*\n',
-        r'\n\s*REFERENCES\s*\n',
-        r'\n\s*Bibliography\s*\n',
-        r'\n\s*BIBLIOGRAPHY\s*\n',
-        r'\n\s*Works Cited\s*\n',
+        r'(?im)^[ \t]*(?:[0-9]+\.?\s*)?(references|bibliography|works cited)[ \t]*$',
     ]
 
     split_pos = len(text)
@@ -73,7 +164,6 @@ def _split_references(text: str) -> tuple:
     body_text = text[:split_pos]
     ref_text = text[split_pos:]
 
-    # Parse individual citations from reference section
     citations = _extract_citations(ref_text)
 
     return body_text, citations
@@ -120,3 +210,7 @@ def _extract_citations(ref_text: str) -> list:
     citations = [c for c in citations if len(c) > 20]
 
     return citations
+
+
+# ── Legacy alias for backward compatibility ──────────────────────────────────
+parse_pdf = parse_document
