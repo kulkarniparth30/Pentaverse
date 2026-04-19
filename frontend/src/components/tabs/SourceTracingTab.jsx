@@ -21,7 +21,39 @@ export default function SourceTracingTab({ report }) {
 
   return (
     <div className="animate-fade-in-up">
-
+      {/* Citation Anomalies Section */}
+      <div className="mb-8">
+        <h3 className="section-title">
+          <span style={{ color: '#ec4899' }}>📚</span> Citation Forensics
+        </h3>
+        
+        {report.citation_anomalies && report.citation_anomalies.hallucinated_citations?.length > 0 ? (
+          <div className="glass-card" style={{ padding: 24, borderLeft: '4px solid #ef4444', background: 'rgba(239,68,68,0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 24 }}>🚨</span>
+              <div>
+                <h4 style={{ fontSize: 16, fontWeight: 700, color: '#ef4444', margin: 0 }}>Hallucinated Citations Detected!</h4>
+                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>The following citations could not be verified via the Crossref academic database and are likely AI-generated fakes.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {report.citation_anomalies.hallucinated_citations.map((cite, i) => (
+                <div key={i} style={{ padding: '12px 16px', background: '#fff', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', fontSize: 13, color: '#1e293b', fontFamily: 'monospace' }}>
+                  {cite}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+           <div className="glass-card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+             <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✅</div>
+             <div>
+               <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1e293b', margin: 0 }}>Citations Verified</h4>
+               <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>A random sample of citations was successfully verified against real-world academic databases.</p>
+             </div>
+           </div>
+        )}
+      </div>
 
       {/* Source Matches */}
       {sourceMatches.length > 0 ? (

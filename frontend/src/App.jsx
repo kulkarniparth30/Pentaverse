@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './components/auth/AuthContext.jsx'
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx'
+import HomePage from './pages/HomePage.jsx'
 import UploadPage from './pages/UploadPage.jsx'
 import AnalysisPage from './pages/AnalysisPage.jsx'
 import ReportPage from './pages/ReportPage.jsx'
@@ -14,12 +15,13 @@ function Navbar() {
   const { user, signOut } = useAuth()
   
   const navItems = [
-    { path: '/', label: 'Upload', icon: '📄' },
-    { path: '/analysis', label: 'Analysis', icon: '🔬' },
-    { path: '/report', label: 'Report', icon: '📊' },
+    { path: '/', label: 'Home', icon: '🏠' },
+    { path: '/upload', label: 'Upload', icon: '📄' },
+    { path: '/history', label: 'History', icon: '🕒' },
   ]
 
   if (!user) return null
+  if (location.pathname === '/login' || location.pathname === '/signup') return null
 
   return (
     <nav className="navbar-pill">
@@ -49,12 +51,6 @@ function Navbar() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Link 
-          to="/history" 
-          className={`nav-link ${location.pathname === '/history' ? 'active' : ''}`}
-        >
-          <span style={{ marginRight: 4 }}>🕒</span>History
-        </Link>
         <button 
           onClick={signOut}
           className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-red-500 transition-colors"
@@ -84,6 +80,11 @@ export default function App() {
         <main style={{ paddingTop: 90, position: 'relative', zIndex: 1 }}>
           <Routes>
             <Route path="/" element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/upload" element={
               <ProtectedRoute>
                 <UploadPage />
               </ProtectedRoute>

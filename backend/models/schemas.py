@@ -41,6 +41,7 @@ class ParagraphResult(BaseModel):
     """Analysis result for a single paragraph."""
     id: int = Field(..., description="Paragraph index (0-based)")
     text_preview: str = Field(..., description="First 200 chars of paragraph text")
+    full_text: str = Field(default="", description="Full text of the paragraph")
     cluster: int = Field(..., description="Assigned cluster ID (style group)")
     style_stats: StyleStats = Field(..., description="Stylometric features")
     flagged: bool = Field(default=False, description="True if paragraph is suspicious")
@@ -54,6 +55,7 @@ class CitationAnomalies(BaseModel):
     temporal_anomaly: bool = Field(default=False, description="Uneven year distribution detected")
     topic_mismatch: bool = Field(default=False, description="Cross-section topic inconsistency")
     self_citation_anomaly: bool = Field(default=False, description="Unusual self-citation pattern")
+    hallucinated_citations: List[str] = Field(default_factory=list, description="Citations verified as fake via Crossref")
     score: float = Field(default=0.0, description="Citation anomaly score (0-1)")
     details: Optional[str] = Field(default=None, description="Human-readable explanation")
 

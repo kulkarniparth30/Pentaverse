@@ -7,17 +7,19 @@
  * Owner: Frontend Dev 1
  */
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { getReport } from '../services/api.js'
+import html2pdf from 'html2pdf.js'
 
 import StylometryTab from '../components/tabs/StylometryTab.jsx'
 import AIDetectionTab from '../components/tabs/AIDetectionTab.jsx'
 import SourceTracingTab from '../components/tabs/SourceTracingTab.jsx'
 import SummaryTab from '../components/tabs/SummaryTab.jsx'
+import DocumentTextTab from '../components/tabs/DocumentTextTab.jsx'
 
 /* ── Verdict Banner ── */
-function VerdictBanner({ report }) {
+function VerdictBanner({ report, onDownload }) {
   const aiPct = Math.round((report.overall_ai_probability || 0) * 100)
   const risk = report.overall_risk_score || 0
   const authors = report.estimated_authors || 1
@@ -57,7 +59,31 @@ function VerdictBanner({ report }) {
           <p style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{verdict}</p>
         </div>
       </div>
-      <DashboardLink />
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button
+          onClick={onDownload}
+          style={{
+            background: '#fff',
+            border: 'none',
+            borderRadius: 50,
+            padding: '8px 18px',
+            color: '#1e293b',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)' }}
+        >
+          📄 Download PDF
+        </button>
+        <DashboardLink />
+      </div>
     </div>
   )
 }
@@ -108,7 +134,7 @@ function FileInfoBar({ fileId, paragraphCount }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2-2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
         </svg>
       </div>
@@ -128,6 +154,7 @@ function FileInfoBar({ fileId, paragraphCount }) {
 const TABS = [
   { id: 'stylometry', label: 'Stylometry', icon: '📊' },
   { id: 'ai', label: 'AI Detection', icon: '🤖' },
+  { id: 'document', label: 'Document Text', icon: '📄' },
   { id: 'sources', label: 'Source Tracing', icon: '🌐' },
   { id: 'summary', label: 'Summary', icon: '📋' },
 ]
@@ -140,7 +167,7 @@ function TabNavigation({ activeTab, setActiveTab, aiPct }) {
       padding: '12px 28px',
       background: '#fff',
       borderBottom: '1px solid #f1f5f9',
-    }}>
+    }} className="html2pdf__exclude">
       {TABS.map(tab => {
         const isActive = activeTab === tab.id
         return (
@@ -203,6 +230,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(!report)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('stylometry')
+  const reportRef = useRef(null)
 
   useEffect(() => {
     if (report || !fileId) return
@@ -211,6 +239,31 @@ export default function ReportPage() {
       .then(data => { setReport(data); setLoading(false) })
       .catch(err => { setError(err.response?.data?.detail || 'Failed to load report.'); setLoading(false) })
   }, [fileId, report])
+
+  const handleDownloadPdf = () => {
+    const element = reportRef.current;
+    if (!element) return;
+    
+    // Set active tab to 'summary' briefly to capture the best high-level view for the PDF
+    const previousTab = activeTab;
+    setActiveTab('summary');
+    
+    // Small timeout to allow React to render the summary tab
+    setTimeout(() => {
+      const opt = {
+        margin:       10,
+        filename:     `ForensIQ_Report_${fileId?.slice(0, 8) || 'Document'}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        // Restore previous tab after PDF generation
+        setActiveTab(previousTab);
+      });
+    }, 300);
+  }
 
   if (loading) {
     return (
@@ -240,7 +293,7 @@ export default function ReportPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }} className="animate-fade-in-up">
       {/* Verdict + Info + Tabs Shell */}
-      <div style={{
+      <div ref={reportRef} style={{
         borderRadius: 20,
         overflow: 'hidden',
         border: '1px solid #e2e8f0',
@@ -248,17 +301,18 @@ export default function ReportPage() {
         boxShadow: 'var(--forensiq-shadow-lg)',
         background: '#fff',
       }}>
-        <VerdictBanner report={report} />
+        <VerdictBanner report={report} onDownload={handleDownloadPdf} />
         <FileInfoBar fileId={fileId} paragraphCount={paragraphCount} />
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} aiPct={aiPct} />
-      </div>
 
-      {/* Tab Content */}
-      <div style={{ minHeight: 400 }}>
-        {activeTab === 'stylometry' && <StylometryTab report={report} />}
-        {activeTab === 'ai' && <AIDetectionTab report={report} />}
-        {activeTab === 'sources' && <SourceTracingTab report={report} />}
-        {activeTab === 'summary' && <SummaryTab report={report} />}
+        {/* Tab Content inside the report ref so it gets exported */}
+        <div style={{ minHeight: 400, padding: 24 }}>
+          {activeTab === 'stylometry' && <StylometryTab report={report} />}
+          {activeTab === 'ai' && <AIDetectionTab report={report} />}
+          {activeTab === 'document' && <DocumentTextTab report={report} />}
+          {activeTab === 'sources' && <SourceTracingTab report={report} />}
+          {activeTab === 'summary' && <SummaryTab report={report} />}
+        </div>
       </div>
     </div>
   )

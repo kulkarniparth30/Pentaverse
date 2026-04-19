@@ -28,6 +28,7 @@ def build_report(paragraphs, style_vectors, ai_probs, cluster_result, citation_a
         para_results.append(ParagraphResult(
             id=i,
             text_preview=paragraphs[i][:200],
+            full_text=paragraphs[i],
             cluster=labels[i] if i < len(labels) else 0,
             style_stats=StyleStats(
                 avg_sentence_length=sv[0], type_token_ratio=sv[1],
@@ -72,7 +73,8 @@ def build_report(paragraphs, style_vectors, ai_probs, cluster_result, citation_a
         cluster_result.get("silhouette_score", 0),
         len(flagged_set),
         n,
-        overall_ai_probability
+        overall_ai_probability,
+        len(ca.hallucinated_citations) > 0
     )
 
     report = ForensicReport(
@@ -87,7 +89,7 @@ def build_report(paragraphs, style_vectors, ai_probs, cluster_result, citation_a
     return report.model_dump()
 
 
-def _compute_risk_score(authors, citation_score, silhouette, n_flagged, n_total, overall_ai):
+def _compute_risk_score(authors, citation_score, silhouette, n_flagged, n_total, overall_ai, has_hallucinations=False):
     """
     Compute a 0-100 forensic risk score.
     Multi-author stitching is treated as PRIMARY signal, not AI.
@@ -132,6 +134,8 @@ def _compute_risk_score(authors, citation_score, silhouette, n_flagged, n_total,
 
     # ── Component 4: Citation anomalies ──────────────────────────────────────
     citation_component = citation_score * 10.0
+    if has_hallucinations:
+        citation_component += 35.0  # Massive penalty for fake citations
 
     # ── Component 5: AI Generation (secondary signal) ────────────────────────
     # AI content is an additional red flag, not the primary one

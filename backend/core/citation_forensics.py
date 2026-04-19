@@ -22,6 +22,8 @@ Dependencies: spaCy, re
 """
 
 import re
+import random
+import requests
 from collections import Counter
 from typing import List
 import spacy
@@ -44,6 +46,7 @@ def analyze_citations(citations: List[str]) -> dict:
             "temporal_anomaly": False,
             "topic_mismatch": False,
             "self_citation_anomaly": False,
+            "hallucinated_citations": [],
             "score": 0.0,
             "details": "Insufficient citations for analysis.",
         }
@@ -60,18 +63,71 @@ def analyze_citations(citations: List[str]) -> dict:
     # Check 3: Self-citation anomaly
     self_citation_anomaly, self_detail = _check_self_citations(citations)
 
-    # Compute overall anomaly score (0–1)
-    score = _compute_score(temporal_anomaly, topic_mismatch, self_citation_anomaly)
+    # Check 4: Hallucinated citations via Crossref (verify a random sample of max 3)
+    sample_size = min(3, len(citations))
+    sampled_citations = random.sample(citations, sample_size)
+    hallucinated_citations = _verify_citations_crossref(sampled_citations)
 
-    details = " | ".join(filter(None, [temporal_detail, topic_detail, self_detail]))
+    # Compute overall anomaly score (0–1)
+    score = _compute_score(temporal_anomaly, topic_mismatch, self_citation_anomaly, len(hallucinated_citations) > 0)
+
+    details_list = filter(None, [
+        temporal_detail, 
+        topic_detail, 
+        self_detail, 
+        f"Found {len(hallucinated_citations)} hallucinated citations" if hallucinated_citations else ""
+    ])
+    details = " | ".join(details_list)
 
     return {
         "temporal_anomaly": temporal_anomaly,
         "topic_mismatch": topic_mismatch,
         "self_citation_anomaly": self_citation_anomaly,
+        "hallucinated_citations": hallucinated_citations,
         "score": round(score, 2),
         "details": details or "No anomalies detected.",
     }
+
+def _verify_citations_crossref(citations: List[str]) -> List[str]:
+    """
+    Check if citations exist using the free Crossref API.
+    Returns a list of citations that could not be verified (likely hallucinated).
+    """
+    hallucinated = []
+    headers = {"User-Agent": "ForensIQ/1.0 (mailto:admin@forensiq.local)"}
+    
+    for citation in citations:
+        # Strip numbers/brackets from start of citation to improve search relevance
+        clean_citation = re.sub(r'^\[\d+\]\s*|^\d+\.\s*', '', citation).strip()
+        if not clean_citation:
+            continue
+            
+        try:
+            url = f"https://api.crossref.org/works?query.bibliographic={requests.utils.quote(clean_citation)}&rows=1"
+            response = requests.get(url, headers=headers, timeout=5)
+            
+            if response.status_code == 200:
+                data = response.json()
+                items = data.get("message", {}).get("items", [])
+                
+                # If no items returned, it's highly suspicious
+                if not items:
+                    hallucinated.append(citation)
+                    continue
+                    
+                # Crossref returns a relevance score. If the top match score is very low,
+                # it means the citation is likely made up and crossref just found a weak partial match.
+                top_match = items[0]
+                if top_match.get("score", 0) < 20.0:
+                    hallucinated.append(citation)
+            else:
+                # If API fails, we can't definitively call it a hallucination. Skip.
+                pass
+        except Exception:
+            # On network error/timeout, fail gracefully
+            pass
+            
+    return hallucinated
 
 
 def _extract_years(citations: List[str]) -> List[int]:
@@ -193,7 +249,7 @@ def _check_self_citations(citations: List[str]) -> tuple:
     return False, ""
 
 
-def _compute_score(temporal: bool, topic: bool, self_cite: bool) -> float:
+def _compute_score(temporal: bool, topic: bool, self_cite: bool, has_hallucinations: bool) -> float:
     """Compute weighted anomaly score from 0 to 1."""
     score = 0.0
     if temporal:
@@ -202,4 +258,6 @@ def _compute_score(temporal: bool, topic: bool, self_cite: bool) -> float:
         score += 0.40
     if self_cite:
         score += 0.25
+    if has_hallucinations:
+        score += 0.60  # Very high penalty for hallucinated citations
     return min(score, 1.0)

@@ -60,14 +60,14 @@ export default function SummaryTab({ report }) {
           }}>📋</div>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1e293b' }}>Forensic Summary</h3>
         </div>
-        <p style={{ fontSize: 14, lineHeight: 1.85, color: '#64748b' }}>
+        <p style={{ fontSize: 14, lineHeight: 1.85, color: '#334155' }}>
           {forensicSummary}
         </p>
 
         {/* AI Detection Summary */}
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
           <h4 style={{ fontSize: 14, fontWeight: 700, color: '#6366f1', marginBottom: 12 }}>AI Detection Summary</h4>
-          <p style={{ fontSize: 14, lineHeight: 1.85, color: '#64748b' }}>
+          <p style={{ fontSize: 14, lineHeight: 1.85, color: '#334155' }}>
             {aiSummary}
           </p>
         </div>

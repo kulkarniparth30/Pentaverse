@@ -48,7 +48,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 # ── Engine 1: Gemini API (Batch Mode) ────────────────────────────────────────
 
 _GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
 
 def _gemini_batch_scores(paragraphs: list[str]) -> list[float]:
@@ -97,24 +97,29 @@ Return the raw array now:"""
 
         raw = None
         for key in keys:
-            try:
-                resp = _requests.post(
-                    f"{_GEMINI_API_URL}?key={key}",
-                    json=payload, timeout=30
-                )
-                resp.raise_for_status()
-                raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                break  # Success! Stop trying other keys
-            except _requests.exceptions.HTTPError as e:
-                if resp.status_code == 429:
-                    print(f"[Gemini Batch] Rate limited on key ending in ...{key[-4:]}. Trying next key...")
-                    continue # Try next key
-                else:
-                    print(f"[Gemini Batch] HTTP Error: {e}")
+            for attempt in range(3):  # Retry up to 3 times with backoff
+                try:
+                    resp = _requests.post(
+                        f"{_GEMINI_API_URL}?key={key}",
+                        json=payload, timeout=30
+                    )
+                    resp.raise_for_status()
+                    raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    break  # Success!
+                except _requests.exceptions.HTTPError as e:
+                    if resp.status_code == 429:
+                        wait = (attempt + 1) * 10  # 10s, 20s, 30s backoff
+                        print(f"[Gemini Batch] Rate limited (attempt {attempt+1}/3), waiting {wait}s...")
+                        time.sleep(wait)
+                        continue  # Retry same key
+                    else:
+                        print(f"[Gemini Batch] HTTP Error: {e}")
+                        return [-1.0] * len(paragraphs)
+                except Exception as e:
+                    print(f"[Gemini Batch] Connection Error: {e}")
                     return [-1.0] * len(paragraphs)
-            except Exception as e:
-                print(f"[Gemini Batch] Connection Error: {e}")
-                return [-1.0] * len(paragraphs)
+            if raw:
+                break  # Got a result, stop trying keys
 
         if not raw:
             print("[Gemini Batch] All API keys failed or rate-limited.")
@@ -276,7 +281,9 @@ def _roberta_score(text: str) -> float:
         if "chatgpt" in label or "fake" in label or "ai" in label:
             return round(score, 4)
         else:
-            return round(max(0.25, 1.0 - score), 4)
+            # Human label: AI probability = 1 - human_confidence
+            # No artificial floor — let the model differentiate
+            return round(1.0 - score, 4)
     except Exception as e:
         print(f"RoBERTa engine error: {e}")
         return -1.0
@@ -408,13 +415,18 @@ def batch_detect_ai(paragraphs: list[str]) -> list[float]:
         engines = []
         weights = []
 
-        if g >= 0:
+        gemini_available = g >= 0
+        groq_available = q >= 0
+        roberta_available = r >= 0
+
+        if gemini_available:
             engines.append(g)
-            weights.append(0.40)  # Gemini
-        if q >= 0:
+            weights.append(0.40)  # Gemini (primary)
+        if groq_available:
             engines.append(q)
-            weights.append(0.25)  # Groq (Llama 3.3 70B)
-        if r >= 0:
+            # Groq gets more weight when Gemini is down
+            weights.append(0.45 if not gemini_available else 0.25)
+        if roberta_available:
             engines.append(r)
             weights.append(0.20)  # RoBERTa
         engines.append(h)

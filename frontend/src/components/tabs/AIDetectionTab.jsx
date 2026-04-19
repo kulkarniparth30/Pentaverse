@@ -14,7 +14,7 @@ import AIDonutChart from '../AIDonutChart.jsx'
 export default function AIDetectionTab({ report }) {
   const aiPct = Math.round((report.overall_ai_probability || 0) * 100)
   const paragraphs = report.paragraphs || []
-  const aiParas = paragraphs.filter(p => (p.ai_probability || 0) > 0.45)
+  const aiParas = paragraphs.filter(p => (p.ai_probability || 0) > 0.30)
   const aiParaPct = paragraphs.length > 0 ? Math.round((aiParas.length / paragraphs.length) * 100) : 0
   const likelyTool = report.likely_ai_tool || 'Unknown'
   const aiSummary = report.ai_detection_summary || ''
@@ -73,7 +73,7 @@ export default function AIDetectionTab({ report }) {
       {/* AI Detection Summary */}
       {aiSummary && (
         <div className="glass-card" style={{ padding: 24, marginBottom: 24, borderLeft: '4px solid #6366f1' }}>
-          <p style={{ fontSize: 14, lineHeight: 1.75, color: '#64748b' }}>{aiSummary}</p>
+          <p style={{ fontSize: 14, lineHeight: 1.75, color: '#334155' }}>{aiSummary}</p>
         </div>
       )}
 
